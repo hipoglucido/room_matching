@@ -3,11 +3,9 @@ import random
 import pandas as pd
 from faker import Faker
 
-# Initialize Faker for generating random descriptive details
 fake = Faker()
 
 
-# Function to create more complex room names with synonyms, rearrangements, and variations
 def generate_advanced_room_name(base_name):
     prefixes = ["Deluxe", "Standard", "Luxury", "Executive", "Economy", "Premium"]
     suffixes = [
@@ -51,6 +49,7 @@ def generate_room_pair(base_name, is_match):
         room_b = generate_advanced_room_name(base_name + " Alt")
     return room_a, room_b
 
+
 def generate_synthetic_dataset(n_rows: int, match_ratio: float) -> pd.DataFrame:
     # Generate 200 rows of advanced synthetic data
     advanced_data = []
@@ -58,8 +57,8 @@ def generate_synthetic_dataset(n_rows: int, match_ratio: float) -> pd.DataFrame:
         base_name = random.choice(["Room", "Suite", "Apartment", "Studio", "Villa"])
         is_match = random.random() < match_ratio
         room_a, room_b = generate_room_pair(base_name, is_match)
-        advanced_data.append([room_a.lower(), room_b.lower(), is_match])
+        advanced_data.append([room_a, room_b, is_match])
 
     # Create a DataFrame
-    df = pd.DataFrame(advanced_data, columns=["A", "B", "match"])
+    df = pd.DataFrame(advanced_data, columns=["A", "B", "match"]).drop_duplicates()
     return df
