@@ -1,64 +1,115 @@
 import random
+from typing import Tuple
 
 import pandas as pd
 from faker import Faker
+from loguru import logger
+from random import choice, random, randrange
 
-fake = Faker()
 
-
-def generate_advanced_room_name(base_name):
-    prefixes = ["Deluxe", "Standard", "Luxury", "Executive", "Economy", "Premium"]
-    suffixes = [
-        "with ocean view", "near the pool", "with balcony", "pet-friendly",
-        "for families", "with mountain view", "with garden access"
-    ]
-    modifiers = [
-        "king bed", "queen bed", "twin beds", "spacious layout", "budget-friendly",
-        "modern decor", "breakfast included", fake.city() + " style"
+size_types = [
+        ['small', 'petite', 'tiny', 'little', 'compact', 'miniature'],
+        ['medium', 'normal', 'average', 'middling', 'moderate'],
+        ['large', 'big', 'spacious', 'ample', 'vast', 'huge', 'enormous', 'gigantic', 'colossal', 'immense'],
+        ['humungous', 'gargantuan', 'mammoth', 'tremendous']
     ]
 
-    # Randomly construct a complex name with combinations
-    name_parts = [random.choice(prefixes), base_name]
-    if random.random() > 0.5:
-        name_parts.append(random.choice(suffixes))
-    if random.random() > 0.5:
-        name_parts.append(random.choice(modifiers))
-    return " ".join(name_parts)
+properties = [
+    ['balcony', 'terrace', 'patio', 'veranda'],
+    ["well-equipped", "fully furnished", "all amenities", "modern conveniences"],
+    ["nicely decorated", "beautifully designed", "stylishly decorated", "elegant", "chic", "modern", "classic",
+     "rustic", "minimalist"],
+    ['pet-friendly', 'pets allowed', 'pets welcome'],
+    ["budget-friendly", "affordable", "cheap", "economical", "value"],
+    ["luxury", "luxurious", "opulent", "grand", "premium"],
+    ["cozy", "comfortable", "homey", "warm"],
+    ["spacious", "roomy"],
+    ["quiet", "peaceful", "tranquil", "serene"],
+    ["convenient location", "central location", "close to attractions", "easy city access"],
+    ["family-friendly", "kid-friendly", "suitable for children"],
+    ["business-friendly", "executive", "work-ready", "with workspace"],
+]
+rooms = [
+    ["studio", "open plan", "loft"],
+    ["suite", "family suite",  "apartment"],
+    ["executive suite", "suite"],
+    ["room","double room"],
+    ["room","queen room"],
+    ["room","king room"],
+    ["room","single room", "individual room"],
+]
+articles = ['a', 'the', *['' for _ in range(10)]]
+modifiers = ['very', 'quite', 'super', *['' for _ in range(10)]]
+
+def sample_and_append_element_to_matching_rooms(a, b, elements, could_be_empty:bool):
+    elements_same_type = choice(elements)
+    a.append(sample_element(elements_same_type, could_be_empty=could_be_empty))
+    b.append(sample_element(elements_same_type, could_be_empty=could_be_empty))
+
+def sample_element(elements_same_type, could_be_empty=bool):
+
+    if could_be_empty:
+        return choice(elements_same_type + ['' for _ in range(2*len(elements_same_type))])
+    return choice(elements_same_type)
 
 
-# Generate advanced variations for matching and non-matching logic
-def generate_room_pair(base_name, is_match):
-    room_a = generate_advanced_room_name(base_name)
-    if is_match:
-        # Modify room A slightly for room B (not a strict substring match)
-        synonyms = {
-            "king bed": "large bed", "queen bed": "double bed", "with balcony": "balcony access",
-            "modern decor": "contemporary design", "spacious layout": "open space",
-            "pet-friendly": "pets allowed", "budget-friendly": "affordable"
-        }
-        room_b = room_a
-        for key, val in synonyms.items():
-            if key in room_a:
-                room_b = room_b.replace(key, val, 1)
-                break
-        # Randomize further order or add minor noise
-        if random.random() > 0.5:
-            room_b = room_b.replace(",", "").replace(" ", " ").strip()
-    else:
-        # Generate a completely different room name
-        room_b = generate_advanced_room_name(base_name + " Alt")
-    return room_a, room_b
+def generate_matching_rooms():
+    a = [choice(articles),choice(modifiers)]
+    b = [choice(articles),choice(modifiers)]
+    sample_and_append_element_to_matching_rooms(a, b, size_types, could_be_empty=False)
+    sample_and_append_element_to_matching_rooms(a, b, rooms, could_be_empty=False)
+    sample_and_append_element_to_matching_rooms(a, b, properties, could_be_empty=True)
+    sample_and_append_element_to_matching_rooms(a, b, properties, could_be_empty=True)
+    a = add_perturbations(a)
+    b = add_perturbations(b)
+    return a, b
+
+def add_perturbations(parts):
 
 
-def generate_synthetic_dataset(n_rows: int, match_ratio: float) -> pd.DataFrame:
-    # Generate 200 rows of advanced synthetic data
-    advanced_data = []
+    new_parts = []
+    for part in parts:
+        new_part = part.strip()
+        new_part = new_part.capitalize() if random() > 0.6 else part
+        new_part = delete_random_character(new_part) if random() > 0.97 else new_part
+        new_parts.append(new_part)
+    result = " ".join(new_parts).strip()
+    if random() > 0.9:
+        result = result.upper()
+    return result
+def delete_random_character(text):
+  """Deletes a random character from a string."""
+  if text:
+    position = randrange(len(text))
+    return text[:position] + text[position+1:]
+  return text
+def generate_random_room():
+    parts = [choice(articles),
+             choice(modifiers),
+             sample_element(choice(size_types), could_be_empty=False),
+             sample_element(choice(rooms), could_be_empty=False),
+             sample_element(choice(properties), could_be_empty=True),
+             sample_element(choice(properties), could_be_empty=True),
+             ]
+
+    return add_perturbations(parts)
+
+def generate_synthetic_dataset(n_rows, match_ratio):
+    rows = []
     for _ in range(n_rows):
-        base_name = random.choice(["Room", "Suite", "Apartment", "Studio", "Villa"])
-        is_match = random.random() < match_ratio
-        room_a, room_b = generate_room_pair(base_name, is_match)
-        advanced_data.append([room_a, room_b, is_match])
+        match = random() < match_ratio
+        if match:
+            a, b = generate_matching_rooms()
 
-    # Create a DataFrame
-    df = pd.DataFrame(advanced_data, columns=["A", "B", "match"]).drop_duplicates()
-    return df
+        else:
+            a = generate_random_room()
+            b = generate_random_room()
+        rows.append({"A": a, "B": b, "match": match})
+    return pd.DataFrame(rows)
+
+if __name__ == "__main__":
+    for i in range(50):
+        a,b = generate_matching_rooms()
+        print(a,",",b)
+    # for i in range(50):
+    #     print(generate_random_room())
