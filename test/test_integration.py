@@ -1,54 +1,38 @@
-import subprocess
-import time
-
+import pytest
 import requests
 from loguru import logger
-
 from rooms.common import FlaskConfig, LOCALHOST
-from rooms.model_creation import create_and_deploy_model, get_dummy_prediction_from_mlflow
+from rooms.model_creation import create_and_deploy_model
 
-import pytest
+@pytest.fixture(scope="module")
+def url():
+    url = f"{LOCALHOST}:{FlaskConfig.PORT}/{FlaskConfig.ROUTE}"
+    logger.info(f"{url=}")
+    return url
 
-@pytest.fixture(scope="module")  # Use module scope to deploy once per module
-def deployed_model():
+def test_mlflow_deployment_and_prediction(url):
+    # NB! before running this test the FLASK APP need to be running
+    # How to run it: python rooms/app.py
     create_and_deploy_model()
-
-@pytest.fixture(scope="module")  # Use module scope to deploy once per module
-def deployed_flask_app():
-    subprocess.Popen(
-        ["python", FlaskConfig.APP_PATH],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    time.sleep(5)
-
-
-def test_mlflow_deployment_and_prediction(deployed_model, deployed_flask_app):
-
-
     # Sample input data
     data = {
         "referenceCatalog": [
-
-            "Big room with balcony",
-            "small suite",
-
+            "room with a veranda",
+            "huge room",
+            " "
         ],
         "inputCatalog": [
-            "Huge room along with a balcony",
-            "big room with a balcony",
-
-            "very big room with a nice balcony",
-            "luxury suite",
-
-        ],
+            "big room with balcony",
+            "huge room with a BALCONY",
+            "small room",
+            "    "
+        ]
     }
 
     # Send a POST request to the Flask API
-    url = f"{LOCALHOST}:{FlaskConfig.PORT}/{FlaskConfig.ROUTE}"
-    logger.info(f"{url=}")
+
     response = requests.post(url, json=data)
     actual = response.json()
-
-    expected = []
+    logger.info(f"{actual=}")
+    expected = {'positional_mapping': {'0': [0, 1], '1': [0, 1]}}
     assert actual == expected

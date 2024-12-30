@@ -7,6 +7,8 @@ pd.set_option("display.max_rows", 20)  # Show all rows (optional)
 pd.set_option("display.width", 500)
 pd.set_option("display.max_colwidth", 1000)
 
+SEED = 7
+
 
 class ColumnNames:
     FEATURES = [
@@ -22,22 +24,26 @@ class ColumnNames:
 
 class ModelConfig:
     LGBM_PARAMS = {
-        'objective': 'binary',  # Assuming binary classification
-        'metric': 'binary_logloss',
-        'boosting_type': 'gbdt',
-        'num_leaves': 31,
-        'learning_rate': 0.1,
-        'n_estimators': 100,
-        "verbose" : -1
+        "objective": "binary",  # Assuming binary classification
+        "metric": "binary_logloss",
+        "boosting_type": "gbdt",
+        "num_leaves": 31,
+        "learning_rate": 0.1,
+        "n_estimators": 100,
+        "verbose": -1,
+        "random_state": SEED,
     }
     TRANSFORMER_NAME = "all-MiniLM-L6-v2"
     MIN_AUC_PR_ON_TEST = 0.98
+    MIN_PRECISION = 0.8
+
+
 class SyntheticDataConfig:
     N_ROWS = 2000
     MATCH_RATIO = 0.5
 
 
-DATA_FOLDER = os.path.join("..", "data")
+DATA_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)),"..", "data")
 
 os.environ["TOKENIZERS_PARALLELISM"] = "false"  # Avoid warning related to transformers
 LOCALHOST = "http://127.0.0.1"
@@ -63,3 +69,6 @@ logger.add(
     level="DEBUG",
     format="{time} {level} {module} - {message}",
 )
+
+
+import lightgbm as lgb

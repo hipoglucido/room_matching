@@ -1,25 +1,43 @@
 import pandas as pd
+import pytest
+
+from rooms.common import SyntheticDataConfig
+from rooms.model_creation import create_synthetic_data_and_train_model, run_model, find_threshold_for_min_precision
 
 
-from rooms.common import SyntheticDataConfig, ColumnNames
-from rooms.model_creation import create_synthetic_data_and_train_model, run_model
-
-from rooms.model_creation import get_lgbm_feature_importance
-def test_create_synthetic_data_and_train_model():
+@pytest.fixture(scope="module")
+def trained_objects():
     params = {"n_rows": SyntheticDataConfig.N_ROWS, "match_ratio": SyntheticDataConfig.MATCH_RATIO}
 
     model, pipeline, metrics = create_synthetic_data_and_train_model(**params)
+    return model, pipeline, metrics
 
-    df = pd.DataFrame([
-        {"Big room with balcony", "room with a veranda"},
 
-        {'huge room', 'small room'},
-
-    ], columns=['A', 'B'])
-    df = run_model(pipeline, model, df)
-
-    actual = df[['A','B', 'decision']]
-    expected = pd.DataFrame([{'A': 'room with a veranda', 'B': 'big room with balcony', 'decision': True},
-     {'A': 'huge room', 'B': 'small room', 'decision': False}])
+@pytest.mark.parametrize(
+    argnames=["df", "expected"],
+    argvalues=[
+        (pd.DataFrame([{'A': 'room with a Veranda', 'B': 'big room with balcony',
+                        }, {'A': 'small room', 'B': 'huge room'}]),
+         pd.DataFrame([{'A': 'room with a Veranda', 'B': 'big room with balcony',
+                        'decision': True}, {'A': 'small room', 'B': 'huge room', 'decision': False}])
+         ),
+        (pd.DataFrame(columns=['A', 'B']), pd.DataFrame(columns=['A', 'B', 'decision'])),
+        (pd.DataFrame([{'A': '', 'B': None}]), pd.DataFrame([{'A': '', 'B': None, 'decision': False}])),
+        (pd.DataFrame([{'A': None, 'B': ''}]), pd.DataFrame([{'A': None, 'B': '', 'decision': False}]))
+    ]
+)
+def test_create_synthetic_data_and_train_model(trained_objects, df, expected):
+    model, pipeline, metrics = trained_objects
+    df = run_model(pipeline, model, metrics['threshold'], df)
+    actual = df[['A', 'B', 'decision']]
     pd.testing.assert_frame_equal(actual, expected)
-    assert True
+
+
+def test_find_threshold_for_min_precision():
+    y_true = [0, 1, 0, 1, 1, 0, 1, 0]
+    y_prob = [0.2, 0.7, 0.4, 0.9, 0.3, 0.6, 0.8, 0.1]
+    min_precision = 0.8
+
+    actual = find_threshold_for_min_precision(y_true, y_prob, min_precision)
+    expected = 0.61
+    assert actual == expected

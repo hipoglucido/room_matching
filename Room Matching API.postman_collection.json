@@ -1,0 +1,367 @@
+{
+	"info": {
+		"_postman_id": "8d6802a2-af4a-40ef-b433-b7b4c6f1b530",
+		"name": "Room Matching API",
+		"description": "This request predicts the mapping between a reference catalog and a supplier catalog of hotel rooms.  \nIt takes two lists of strings as input: \\`referenceCatalog\\` and \\`inputCatalog\\`.  \nThe API returns a JSON object containing the \\`positional_mapping\\` between the catalogs.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "40716489"
+	},
+	"item": [
+		{
+			"name": "Medium matching",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"referenceCatalog\": [\n            \"room with a veranda\",\n            \"huge room\"\n        ],\n        \"inputCatalog\": [\n            \"big room with balcony\",\n            \"huge room with a BALCONY\",\n            \"small room\"\n        ]\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/room_matching",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"room_matching"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"referenceCatalog\": [\n            \"room with a veranda\",\n            \"huge room\"\n        ],\n        \"inputCatalog\": [\n            \"big room with balcony\",\n            \"huge room with a BALCONY\",\n            \"small room\"\n        ]\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/room_matching",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"room_matching"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "Werkzeug/3.1.3 Python/3.11.6"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 30 Dec 2024 20:50:16 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "45"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"positional_mapping\": {\n        \"0\": [\n            0,\n            1\n        ],\n        \"1\": [\n            0,\n            1\n        ]\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Advanced matching",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"referenceCatalog\": [\n            \"Petite suite\",\n            \"middling open plan pets allowed\",\n            \"The  large apartment terrace value\",\n            null,\n            \"\"\n\n        ],\n        \"inputCatalog\": [\n            \"small executive suite\",\n            \"Middling Open plan pet-friendly\",\n            \"vast apartment\",\n            \"\",\n            \"    \"\n        ]\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/room_matching",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"room_matching"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"referenceCatalog\": [\n            \"Petite suite\",\n            \"middling open plan pets allowed\",\n            \"The  large apartment terrace value\",\n            null,\n            \"\"\n\n        ],\n        \"inputCatalog\": [\n            \"small executive suite\",\n            \"Middling Open plan pet-friendly\",\n            \"vast apartment\",\n            \"\",\n            \"    \"\n        ]\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/room_matching",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"room_matching"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "Werkzeug/3.1.3 Python/3.11.6"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 30 Dec 2024 20:50:04 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "49"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"positional_mapping\": {\n        \"0\": [\n            0\n        ],\n        \"1\": [\n            1\n        ],\n        \"2\": [\n            2\n        ]\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Easy matching",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"referenceCatalog\": [\n            \"big king room\"\n        ],\n        \"inputCatalog\": [\n            \"KING room\",\n            \"tiny suite\"\n        ]\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/room_matching",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"room_matching"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"referenceCatalog\": [\n            \"big king room\"\n        ],\n        \"inputCatalog\": [\n            \"KING room\",\n            \"tiny suite\"\n        ]\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/room_matching",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"room_matching"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "Werkzeug/3.1.3 Python/3.11.6"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 30 Dec 2024 20:49:39 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "33"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"positional_mapping\": {\n        \"0\": [\n            0\n        ]\n    }\n}"
+				}
+			]
+		},
+		{
+			"name": "Empty matching",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n        \"referenceCatalog\": [\n           \n        ],\n        \"inputCatalog\": [\n        \n        ]\n    }",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/room_matching",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"room_matching"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "response",
+					"originalRequest": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n        \"referenceCatalog\": [\n           \n        ],\n        \"inputCatalog\": [\n        \n        ]\n    }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://127.0.0.1:8080/room_matching",
+							"protocol": "http",
+							"host": [
+								"127",
+								"0",
+								"0",
+								"1"
+							],
+							"port": "8080",
+							"path": [
+								"room_matching"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "json",
+					"header": [
+						{
+							"key": "Server",
+							"value": "Werkzeug/3.1.3 Python/3.11.6"
+						},
+						{
+							"key": "Date",
+							"value": "Mon, 30 Dec 2024 20:48:59 GMT"
+						},
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						},
+						{
+							"key": "Content-Length",
+							"value": "26"
+						},
+						{
+							"key": "Connection",
+							"value": "close"
+						}
+					],
+					"cookie": [],
+					"body": "{\n    \"positional_mapping\": {}\n}"
+				}
+			]
+		}
+	]
+}

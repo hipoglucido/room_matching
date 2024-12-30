@@ -3,7 +3,6 @@ from sklearn.model_selection import train_test_split
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
-from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sentence_transformers import SentenceTransformer
@@ -55,7 +54,7 @@ def split_data(
 
 
 def normalize_string_column(series: pd.Series) -> pd.Series:
-    return series.str.lower().str.replace("[^a-zA-Z0-9\s]", "", regex=True)
+    return series.fillna("").str.lower().str.replace("[^a-zA-Z0-9\s]", "", regex=True)
 
 
 class RoomMatchingPipeline:
@@ -76,9 +75,10 @@ class RoomMatchingPipeline:
         Returns:
             pd.DataFrame: DataFrame with processed features.
         """
+
         # 1. Text Normalization (optional, but recommended)
-        df["A"] = normalize_string_column(df["A"])
-        df["B"] = normalize_string_column(df["B"])
+        df["A_norm"] = normalize_string_column(df["A"])
+        df["B_norm"] = normalize_string_column(df["B"])
 
         # 2. Feature Engineering
         df = self.create_features(df, is_training)
@@ -100,27 +100,27 @@ class RoomMatchingPipeline:
         # 1. Semantic features using TF-IDF
 
         if is_training:
-            tfidf_A = self.tfidf_vectorizer.fit_transform(df["A"])
-        else:
-            tfidf_A = self.tfidf_vectorizer.transform(df["A"])
-        tfidf_B = self.tfidf_vectorizer.transform(df["B"])
+            self.tfidf_vectorizer.fit(pd.concat([df["A_norm"], df["B_norm"]]))
+
+        tfidf_A = self.tfidf_vectorizer.transform(df["A_norm"])
+        tfidf_B = self.tfidf_vectorizer.transform(df["B_norm"])
         df["cosine_similarity"] = cosine_similarity(tfidf_A, tfidf_B).diagonal()
 
         # 2. String distance features
 
         df["levenshtein_distance"] = df.apply(
-            lambda row: levenshtein_distance(row["A"], row["B"]), axis=1
+            lambda row: levenshtein_distance(row["A_norm"], row["B_norm"]), axis=1
         )
 
         df["jaro_winkler_similarity"] = df.apply(
-            lambda row: jaro_winkler_similarity(row["A"], row["B"]), axis=1
+            lambda row: jaro_winkler_similarity(row["A_norm"], row["B_norm"]), axis=1
         )
 
         embeddings_A = self.sentence_transformer.encode(
-            df["A"].tolist(), convert_to_tensor=True
+            df["A_norm"].tolist(), convert_to_tensor=True
         )
         embeddings_B = self.sentence_transformer.encode(
-            df["B"].tolist(), convert_to_tensor=True
+            df["B_norm"].tolist(), convert_to_tensor=True
         )
 
         embeddings_A = embeddings_A.cpu()  # Move to CPU
@@ -133,6 +133,7 @@ class RoomMatchingPipeline:
         assert all(
             [f in df for f in ColumnNames.FEATURES]
         ), f"Missing features {ColumnNames.FEATURES=} {df.columns=}"
+        df.drop(columns=["A_norm", "B_norm"], inplace=True)
         return df
 
 

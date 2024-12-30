@@ -60,6 +60,8 @@ def get_mapping_from_reference_to_supplier_catalog(
     """
     df = prepare_match_candidate_pairs(reference_catalog, supplier_catalog)
     df = remove_invalid_rooms(df)
+    if len(df) == 0:
+        return {}
     model = load_model()
 
     df["match"] = model.predict(df)

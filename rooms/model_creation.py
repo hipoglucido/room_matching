@@ -1,12 +1,12 @@
 import pandas as pd
 from mlflow import MlflowClient
-from sklearn.linear_model import LogisticRegression
-
+import numpy as np
+from sklearn.metrics import precision_score
 from rooms.common import ColumnNames, MLFlowConfig, ModelConfig, SyntheticDataConfig
 from rooms.data_processing import RoomMatchingPipeline
 import lightgbm as lgb
 from rooms.data_processing import split_data
-from sklearn.metrics import average_precision_score, roc_auc_score, accuracy_score
+from sklearn.metrics import average_precision_score, roc_auc_score, accuracy_score, precision_score, recall_score
 from rooms.synthetic_data import generate_synthetic_dataset
 import mlflow
 import mlflow.pyfunc
@@ -15,7 +15,12 @@ from typing import Dict, Any, Tuple
 
 
 class RoomMatchingModel(mlflow.pyfunc.PythonModel):
-    def __init__(self, model: lgb.LGBMClassifier, pipeline: RoomMatchingPipeline):
+    def __init__(
+        self,
+        model: lgb.LGBMClassifier,
+        pipeline: RoomMatchingPipeline,
+        threshold: float,
+    ):
         """
         Initialize the RoomMatchingModel with a LightGBM model and a data processing pipeline.
 
@@ -24,6 +29,7 @@ class RoomMatchingModel(mlflow.pyfunc.PythonModel):
             pipeline (RoomMatchingPipeline): The data processing pipeline.
         """
         self.model = model
+        self.threshold = threshold
         self.pipeline = pipeline
 
     def predict(self, context: Any, model_input):
@@ -37,33 +43,77 @@ class RoomMatchingModel(mlflow.pyfunc.PythonModel):
         Returns:
             pd.Series: The predictions made by the model.
         """
-        model_input = run_model(self.pipeline, self.model, model_input)
+        model_input = run_model(self.pipeline, self.model, self.threshold, model_input)
         return model_input[ColumnNames.DECISION]
 
-def run_model(pipeline, model, df):
+
+def find_threshold_for_min_precision(y_true, y_prob, min_precision):
+    """
+    Determines the threshold on probability output to achieve a minimum precision.
+
+    Args:
+      y_true: True binary labels (0 or 1).
+      y_prob: Predicted probabilities for the positive class.
+      min_precision: The desired minimum precision.
+
+    Returns:
+      float: The threshold that achieves the minimum precision.
+             Returns None if no threshold meets the criteria.
+    """
+    thresholds = np.arange(0, 1.01, 0.01)  # Generate potential thresholds
+    best_threshold = None
+    for threshold in thresholds:
+        y_pred = (y_prob >= threshold).astype(int)
+        precision = precision_score(y_true, y_pred)
+        if precision >= min_precision:
+            best_threshold = float(threshold)
+            break  # Stop once the minimum precision is reached
+    logger.info(f"{min_precision=} {best_threshold=}")
+    return best_threshold
+
+
+def take_decision(df, threshold):
+    return df[ColumnNames.PROBA] >= threshold
+
+
+def run_model(pipeline, model, threshold, df):
+    if len(df) == 0:
+        return pd.DataFrame(
+            columns=list(df.columns) + [ColumnNames.PROBA, ColumnNames.DECISION]
+        )
     X = pipeline.preprocess_data(df, is_training=False)
-    df[ColumnNames.DECISION] =model.predict(X[ColumnNames.FEATURES])
-    df[ColumnNames.PROBA] =model.predict_proba(X[ColumnNames.FEATURES])[:,1]
+    df[ColumnNames.PROBA] = model.predict_proba(X[ColumnNames.FEATURES])[:, 1]
+    df[ColumnNames.DECISION] = take_decision(df, threshold)
     return df
 
-def create_synthetic_data_and_train_model(n_rows, match_ratio) -> Tuple[lgb.LGBMClassifier, RoomMatchingPipeline, Dict[str, float]]:
+
+def create_synthetic_data_and_train_model(
+    n_rows, match_ratio
+) -> Tuple[lgb.LGBMClassifier, RoomMatchingPipeline, Dict[str, float]]:
     """
     Create synthetic data and train the room matching model.
 
     Returns:
         pd.DataFrame: The DataFrame containing the synthetic data.
     """
-    df = generate_synthetic_dataset(n_rows=n_rows,match_ratio=match_ratio).drop_duplicates()
-    logger.info(f"{df[df['match']].sample(20)=}")
-    logger.info(f"{df[~df['match']].sample(20)=}")
+    df = generate_synthetic_dataset(
+        n_rows=n_rows, match_ratio=match_ratio
+    ).drop_duplicates()
+    logger.info(f"Matching examples:\n{df[df['match']].sample(20)}")
+    logger.info(f"Non-matching examples:\n{df[~df['match']].sample(20)}")
 
     model, pipeline, metrics = get_trained_model_obj(df)
     return model, pipeline, metrics
+
+
 def create_and_deploy_model() -> None:
     """
     Create and deploy the room matching model using synthetic data.
     """
-    params = {"n_rows": SyntheticDataConfig.N_ROWS, "match_ratio": SyntheticDataConfig.MATCH_RATIO}
+    params = {
+        "n_rows": SyntheticDataConfig.N_ROWS,
+        "match_ratio": SyntheticDataConfig.MATCH_RATIO,
+    }
 
     model, pipeline, metrics = create_synthetic_data_and_train_model(**params)
     mlflow.set_tracking_uri(MLFlowConfig.TRACKING_URI)
@@ -72,8 +122,10 @@ def create_and_deploy_model() -> None:
         logger.info(f"{mlflow.get_tracking_uri()=}")
         mlflow.pyfunc.log_model(
             artifact_path="room_matching_model",
-            python_model=RoomMatchingModel(model, pipeline),
-            input_example= generate_synthetic_dataset(n_rows=1, match_ratio=1)[["A", "B"]],
+            python_model=RoomMatchingModel(model, pipeline, metrics["threshold"]),
+            input_example=generate_synthetic_dataset(n_rows=1, match_ratio=1)[
+                ["A", "B"]
+            ],
             registered_model_name=MLFlowConfig.MODEL_NAME,
         )
         mlflow.log_metrics(metrics)
@@ -118,18 +170,31 @@ def evaluate_predictions(df: pd.DataFrame) -> Dict[str, float]:
         "roc_auc_score": float(
             roc_auc_score(df[ColumnNames.TARGET], df[ColumnNames.PROBA])
         ),
-        "accuracy_score": float(accuracy_score(df[ColumnNames.TARGET], df[ColumnNames.DECISION])),
-        **df[ColumnNames.PROBA].quantile([.25, .5, .75]).add_prefix(f"test_q").to_dict(),
-
+        "accuracy_score": float(
+            accuracy_score(df[ColumnNames.TARGET], df[ColumnNames.DECISION])
+        ),
+        "precision_score": float(
+            precision_score(df[ColumnNames.TARGET], df[ColumnNames.DECISION])
+        ),
+        "recall_score": float(
+            recall_score(df[ColumnNames.TARGET], df[ColumnNames.DECISION])
+        ),
+        **df[ColumnNames.PROBA]
+        .quantile([0.25, 0.5, 0.75])
+        .add_prefix(f"test_q")
+        .to_dict(),
     }
     actual_auc_pr = metrics["average_precision_score"]
     logger.info(f"{metrics=}")
     tns = df[~df[ColumnNames.DECISION] & ~df[ColumnNames.TARGET]][["A", "B"]]
-    logger.info(f"Some TPs:\n{tns[:20]}")
+    tps = df[df[ColumnNames.DECISION] & df[ColumnNames.TARGET]][["A", "B"]]
+    logger.info(f"Some TPs:\n{tps[:20]}")
+    logger.info(f"Some TNs:\n{tns[:20]}")
     if actual_auc_pr < ModelConfig.MIN_AUC_PR_ON_TEST:
         logger.warning(
             f"Model performs poorly ({actual_auc_pr=}, {ModelConfig.MIN_AUC_PR_ON_TEST=})"
         )
+
     return metrics
 
 
@@ -151,11 +216,23 @@ def get_trained_model_obj(
     val_prep = pipeline.preprocess_data(val_df, is_training=False)
     test_prep = pipeline.preprocess_data(test_df, is_training=False)
     model = get_trained_model(train_prep, val_prep)
+
+    val_prep[ColumnNames.PROBA] = model.predict_proba(val_prep[ColumnNames.FEATURES])[
+        :, 1
+    ]
+    threshold = find_threshold_for_min_precision(
+        y_true=val_prep[ColumnNames.TARGET],
+        y_prob=val_prep[ColumnNames.PROBA],
+        min_precision=ModelConfig.MIN_PRECISION,
+    )
     test_prep[ColumnNames.PROBA] = model.predict_proba(test_prep[ColumnNames.FEATURES])[
-                                   :, 1
-                                   ]
-    test_prep[ColumnNames.DECISION] = model.predict(test_prep[ColumnNames.FEATURES])
+        :, 1
+    ]
+
+    test_prep[ColumnNames.DECISION] = take_decision(test_prep, threshold)
+
     metrics = evaluate_predictions(test_prep)
+    metrics["threshold"] = threshold
     return model, pipeline, metrics
 
 
@@ -173,13 +250,13 @@ def get_lgbm_feature_importance(model):
     # Get feature importances
     importances = model.feature_importances_
 
-
-
     # Create a DataFrame
-    importance_df = pd.DataFrame({'Feature': ColumnNames.FEATURES, 'Importance': importances})
+    importance_df = pd.DataFrame(
+        {"Feature": ColumnNames.FEATURES, "Importance": importances}
+    )
 
     # Sort the DataFrame by importance in descending order
-    importance_df = importance_df.sort_values(by='Importance', ascending=False)
+    importance_df = importance_df.sort_values(by="Importance", ascending=False)
 
     return importance_df
 
@@ -198,8 +275,6 @@ def get_trained_model(
         lgb.LGBMClassifier: The trained LightGBM model.
     """
 
-
-
     logger.info(f"{ModelConfig.LGBM_PARAMS=}")
     model = lgb.LGBMClassifier(**ModelConfig.LGBM_PARAMS)
     model.fit(
@@ -208,7 +283,7 @@ def get_trained_model(
         eval_set=[(val_prep[ColumnNames.FEATURES], val_prep[ColumnNames.TARGET])],
     )
     feature_importances = get_lgbm_feature_importance(model)
-    logger.info(f"{feature_importances=}")
+    logger.info(f"Feature importances:\n{feature_importances}")
     return model
 
 
@@ -218,14 +293,13 @@ def get_dummy_prediction_from_mlflow() -> None:
     """
     model = load_model()
     df = generate_synthetic_dataset(n_rows=5, match_ratio=1)
-    df["pred"] = model.predict(df)
+    df["pred"] = model.predict(df[['A','B']])
     logger.info(f"Match test:\n{df=}")
     df = generate_synthetic_dataset(n_rows=5, match_ratio=0)
-    df["pred"] = model.predict(df)
+    df["pred"] = model.predict(df[['A', 'B']])
     logger.info(f"Match test:\n{df=}")
 
 
 if __name__ == "__main__":
     create_and_deploy_model()
-    # get_dummy_prediction_from_mlflow()
-
+    get_dummy_prediction_from_mlflow()
