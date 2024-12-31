@@ -4,7 +4,7 @@ This project is an implementation of a room matching Build a machine learning AP
 Internally the API uses an ML model to determine whether two pair of rooms are referring to the same room or not.
 
 # Data Collection
-## Current status
+
 A synthetic dataset is created by randomizing different room sizes, synonyms, additions. The logic of this can be found in `rooms/synthetic_data.py`.
 
 These are some examples of rooms that do match:
