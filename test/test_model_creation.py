@@ -8,6 +8,8 @@ from rooms.model_creation import (
     find_threshold_for_min_precision,
 )
 
+from rooms.model_creation import get_best_params
+
 
 @pytest.fixture(scope="module")
 def trained_objects():
@@ -73,3 +75,8 @@ def test_find_threshold_for_min_precision():
     actual = find_threshold_for_min_precision(y_true, y_prob, min_precision)
     expected = 0.61
     assert actual == expected
+
+def test_get_best_params_dry_run():
+    """Just do a dry run"""
+    best_params = get_best_params()
+    assert best_params

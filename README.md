@@ -156,12 +156,24 @@ After importing the collection a few example POST requests with their correspond
 
 # Testing
 
-All the tests are included in `test` folder. A coverage report is provided in the `htmlcov`.
+All the tests are included in `test` folder. A coverage report is provided in the `htmlcov`. Once the html is opened it should look like this:
 
-In order to run the integration test we need to have successfully run this before:
+![testcoverage.png](images/testcoverage.png)
+
+A new report can be created by running:
+
+```commandline
+poetry run pytest --cov=rooms --cov-report=html
+```
+
+In order to run the integration test we need to have successfully run this before (so that the flask API is deployed).
+
 ```commandline
 python rooms/app.py
 ```
+
+## Next steps
+Reach 100% test coverage
 
 # Scalability
 ## Handling increased traffic
