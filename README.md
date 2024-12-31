@@ -172,7 +172,7 @@ Where what is considered as too low is defined in the constants config file.
 ## Next steps
 Instead of logging the warning when performance is too low, it would be preferable to send an alert via email or to the internal messaging system used in the company.
 
-# POC Deployment
+# POC Deployment - step by step guide
 
 Flask is used (`rooms/app.py`) to create the API. These are the steps to run it.
 
@@ -180,11 +180,16 @@ First we have to set up the python virtual environment. For that we need tp inst
 ```commandline
 poetry install
 ```
+
+After succesfully installing all the dependencies with the previous command we now have to activate the new virtual environment, like this:
+```commandline
+poetry shell
+```
 Then we need to train the model and deploy it to MLFlow. We do that by running:
 ```commandline
 python rooms/model_creation.py
 ```
-Afterwards we have to start the flask app to start listening to the requests. We do that by running:
+Now we start the flask app to start listening to the requests. We do that by running:
 ```commandline
 python rooms/app.py
 ```
