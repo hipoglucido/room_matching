@@ -124,6 +124,9 @@ I trained a bunch of different models with default hyperparameters first and the
 
 ![mlflow_model_comparison.png](images/mlflow_model_comparison.png)
 
+## Next steps
+Automatically use the model that had the best performance instead of the last one that was uploaded (current status)
+
 
 
 # POC Deployment
@@ -146,6 +149,10 @@ python rooms/app.py
 And that's it, we can start hitting the API and getting results.
 
 For how to use the API please refer to the postman collection in `Room Matching API.postman_collection.json`
+
+After importing the collection a few example POST requests with their corresponding expected responses can be inspected. It should look like this:
+
+![postman_collection.png](images/postman_collection.png)
 
 # Testing
 
