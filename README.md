@@ -127,7 +127,30 @@ I trained a bunch of different models with default hyperparameters first and the
 ## Next steps
 Automatically use the model that had the best performance instead of the last one that was uploaded (current status)
 
+# Logging and alerting
 
+Loguru was used for logging all the information in a concise and readable way. An example of the logs generated for example when training and deploying the model can be found in `notebooks/model_creation.ipynb`.
+
+Loguru was used because:
+
+* Concise and readable logging
+* Automatic log rotation (rotation="10 MB")
+* Retention policy (retention="10 days")
+* Detailed log messages (timestamps, levels, etc.)
+* Exception handling with tracebacks
+* Asynchronous logging for performance
+* Easy integration with Flask
+* Great for tracking ML training and API monitoring
+
+When the flask API is hit with a post request some logs are also generated:
+
+![img_1.png](images/flask_logs.png)
+
+A warning log is generated if performance measures on the test set is too low:
+
+![img.png](images/warning_log.png)
+
+Where what is considered as too low is defined in the constants config file.
 
 # POC Deployment
 
