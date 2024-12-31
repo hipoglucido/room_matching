@@ -21,11 +21,13 @@ pytest = "^8.3.4"
 tensorflow = "^2.18.0"
 tf-keras = "^2.18.0"
 black = "^24.10.0"
+optuna = "^4.1.0"
 
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.14.0"
 pytest-cov = "^6.0.0"
+optuna-integration = "^4.1.0"
 
 [build-system]
 requires = ["poetry-core"]

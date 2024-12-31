@@ -8,7 +8,7 @@ class TestSplitData(unittest.TestCase):
 
     def test_split_data_valid_percentages(self):
         # Create a sample DataFrame
-        df = pd.DataFrame({'A': range(100), 'target_variable': range(100)})
+        df = pd.DataFrame({"A": range(100), "target_variable": range(100)})
 
         # Split the data
         train_df, val_df, test_df = split_data(df, train_pct=0.7, val_pct=0.15)
@@ -20,7 +20,7 @@ class TestSplitData(unittest.TestCase):
 
     def test_split_data_invalid_percentages(self):
         # Create a sample DataFrame
-        df = pd.DataFrame({'A': range(100), 'target_variable': range(100)})
+        df = pd.DataFrame({"A": range(100), "target_variable": range(100)})
 
         # Test with invalid percentages (sum greater than 1.0)
         with self.assertRaises(ValueError):
@@ -28,9 +28,8 @@ class TestSplitData(unittest.TestCase):
 
     def test_split_data_edge_case(self):
         # Create a sample DataFrame
-        df = pd.DataFrame({'A': range(100), 'B': range(100)})
+        df = pd.DataFrame({"A": range(100), "B": range(100)})
 
         # Test with edge case (train_pct + val_pct = 1.0)
         with self.assertRaises(ValueError):
             split_data(df, train_pct=0.9, val_pct=0.1)
-

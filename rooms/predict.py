@@ -2,7 +2,7 @@ from typing import List, Dict
 
 import requests
 from loguru import logger
-from rooms.common import FlaskConfig, LOCALHOST
+from rooms.constants_config import FlaskConfig, LOCALHOST
 from rooms.data_processing import prepare_match_candidate_pairs, remove_invalid_rooms
 from rooms.model_creation import load_model
 

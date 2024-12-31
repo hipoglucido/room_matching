@@ -1,12 +1,27 @@
+import time
+
 import pandas as pd
+import optuna.integration.lightgbm as lgb_tuner
+
 from mlflow import MlflowClient
 import numpy as np
-from sklearn.metrics import precision_score
-from rooms.common import ColumnNames, MLFlowConfig, ModelConfig, SyntheticDataConfig
+from rooms.constants_config import (
+    ColumnNames,
+    MLFlowConfig,
+    ModelConfig,
+    SyntheticDataConfig,
+    SEED,
+)
 from rooms.data_processing import RoomMatchingPipeline
 import lightgbm as lgb
 from rooms.data_processing import split_data
-from sklearn.metrics import average_precision_score, roc_auc_score, accuracy_score, precision_score, recall_score
+from sklearn.metrics import (
+    average_precision_score,
+    roc_auc_score,
+    accuracy_score,
+    precision_score,
+    recall_score,
+)
 from rooms.synthetic_data import generate_synthetic_dataset
 import mlflow
 import mlflow.pyfunc
@@ -104,6 +119,51 @@ def create_synthetic_data_and_train_model(
 
     model, pipeline, metrics = get_trained_model_obj(df)
     return model, pipeline, metrics
+
+
+def get_best_params():
+    params = {
+        "n_rows": SyntheticDataConfig.N_ROWS,
+        "match_ratio": SyntheticDataConfig.MATCH_RATIO,
+    }
+    df = generate_synthetic_dataset(**params).drop_duplicates()
+
+    train_df, val_df, _ = split_data(
+        df, ModelConfig.SPLIT_TRAIN_PCT, ModelConfig.SPLIT_VAL_PCT
+    )
+    pipeline = RoomMatchingPipeline()
+    train_prep = pipeline.preprocess_data(train_df, is_training=True)
+    val_prep = pipeline.preprocess_data(val_df, is_training=False)
+
+    train_data = lgb.Dataset(
+        train_prep[ColumnNames.FEATURES], label=train_prep[ColumnNames.TARGET]
+    )
+    val_data = lgb.Dataset(
+        val_prep[ColumnNames.FEATURES], label=val_prep[ColumnNames.TARGET]
+    )
+
+    params = {
+        "objective": "binary",
+        "metric": "binary_logloss",
+        "boosting_type": "gbdt",
+        "verbose": 1,
+        "random_state": SEED,
+    }
+
+    tuner = lgb_tuner.LightGBMTuner(
+        params,
+        train_data,
+        valid_sets=[val_data],
+        num_boost_round=800,
+    )
+    t0 = time.time()
+    logger.info("Running tuner")
+    tuner.run()
+
+    best_params = tuner.best_params
+    logger.info(f"Running tuner took {time.time() - t0} seconds:\n{best_params}")
+
+    return best_params
 
 
 def create_and_deploy_model() -> None:
@@ -210,7 +270,9 @@ def get_trained_model_obj(
     Returns:
         Tuple[lgb.LGBMClassifier, RoomMatchingPipeline, Dict[str, float]]: The trained model, pipeline, and evaluation metrics.
     """
-    train_df, val_df, test_df = split_data(df, 0.6, 0.2)
+    train_df, val_df, test_df = split_data(
+        df, ModelConfig.SPLIT_TRAIN_PCT, ModelConfig.SPLIT_VAL_PCT
+    )
     pipeline = RoomMatchingPipeline()
     train_prep = pipeline.preprocess_data(train_df, is_training=True)
     val_prep = pipeline.preprocess_data(val_df, is_training=False)
@@ -293,13 +355,14 @@ def get_dummy_prediction_from_mlflow() -> None:
     """
     model = load_model()
     df = generate_synthetic_dataset(n_rows=5, match_ratio=1)
-    df["pred"] = model.predict(df[['A','B']])
+    df["pred"] = model.predict(df[["A", "B"]])
     logger.info(f"Match test:\n{df=}")
     df = generate_synthetic_dataset(n_rows=5, match_ratio=0)
-    df["pred"] = model.predict(df[['A', 'B']])
+    df["pred"] = model.predict(df[["A", "B"]])
     logger.info(f"Match test:\n{df=}")
 
 
 if __name__ == "__main__":
-    create_and_deploy_model()
-    get_dummy_prediction_from_mlflow()
+    # create_and_deploy_model()
+    # get_dummy_prediction_from_mlflow()
+    get_best_params()

@@ -7,7 +7,7 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 from sentence_transformers import SentenceTransformer
 from jellyfish import levenshtein_distance, jaro_winkler_similarity
-from rooms.common import ColumnNames, ModelConfig
+from rooms.constants_config import ColumnNames, ModelConfig
 from loguru import logger
 from typing import Tuple, List
 

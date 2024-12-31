@@ -1,6 +1,6 @@
 from flask import Flask, request, jsonify
 
-from rooms.common import FlaskConfig
+from rooms.constants_config import FlaskConfig
 from rooms.predict import get_mapping_from_reference_to_supplier_catalog
 
 app = Flask(__name__)

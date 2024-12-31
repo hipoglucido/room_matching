@@ -5,7 +5,7 @@ import pandas as pd
 from random import choice, random, randrange, seed
 import numpy as np
 
-from rooms.common import SEED
+from rooms.constants_config import SEED
 
 # List of size types for rooms
 size_types: List[List[str]] = [
