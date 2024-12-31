@@ -169,6 +169,9 @@ A warning log is generated if performance measures on the test set is too low:
 
 Where what is considered as too low is defined in the constants config file.
 
+## Next steps
+Instead of logging the warning when performance is too low, it would be preferable to send an alert via email or to the internal messaging system used in the company.
+
 # POC Deployment
 
 Flask is used (`rooms/app.py`) to create the API. These are the steps to run it.
