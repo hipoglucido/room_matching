@@ -87,11 +87,15 @@ def find_threshold_for_min_precision(y_true, y_prob, min_precision):
     return best_threshold
 
 
-def take_decision(df, threshold):
+def take_decision(df: pd.DataFrame, threshold: float) -> pd.Series:
+    """Take the final decision based on the probabiliy and the threshold" whether each pair of rooms matches
+    or not"""
     return df[ColumnNames.PROBA] >= threshold
 
 
-def run_model(pipeline, model, threshold, df):
+def run_model(
+        pipeline: RoomMatchingPipeline,model: lgb.LGBMClassifier, threshold, df) -> pd.DataFrame:
+    "Runs the pretrained model on a dataframe with room pair names"
     if len(df) == 0:
         return pd.DataFrame(
             columns=list(df.columns) + [ColumnNames.PROBA, ColumnNames.DECISION]
