@@ -84,6 +84,21 @@ Each pair of normalized room names is represented with four different features t
    1. Get embeddings for each room name
    2. cosine similarity is calculated between each two embedding vectors.
 
+## Explainability
+As part of the training the feature importances are calculated by counting how many times each feature is used by the trees in the model. Example (from `notebooks/model_creation.ipynb`):
+```commandline
+2024-12-31 12:09:40.713 | INFO     | rooms.model_creation:get_trained_model:351 - Feature importances:
+                       Feature  Importance
+3  embedding_cosine_similarity         947
+2      jaro_winkler_similarity         913
+0            cosine_similarity         590
+1         levenshtein_distance         550
+```
+So we see that the most powerful feature seems to be `embedding_cosine_similarity`, followed by `jaro_winkler_similarity`
+
+### Next steps
+Local explanation are very easy to get with lightgbm, we just have to pass `predict_contrib=True` to the predict method, and we get the shapley values. However, this was not deemed necessary for now. It could be done in the future if needed
+
 # Model development
 From `rooms/model_creation.py`
 
@@ -101,6 +116,8 @@ Train set is used to train the LightGBM model.
 Validation set is used to
 1. Determine the stopping criteria of training to limit model complexity and avoid overfitting
 1. Determine the threshold to be used to achieve a given minimum precision. A minimum precision on the validation set was fixed at 80%
+
+
 
 ## Evaluation
 
