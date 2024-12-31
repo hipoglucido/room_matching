@@ -121,7 +121,10 @@ def create_synthetic_data_and_train_model(
     return model, pipeline, metrics
 
 
-def get_best_params():
+def get_best_params() -> dict:
+    """
+    Run LightGBM step-wise hyperparameter optimization with Optuna
+    """
     params = {
         "n_rows": SyntheticDataConfig.N_ROWS,
         "match_ratio": SyntheticDataConfig.MATCH_RATIO,
@@ -363,6 +366,6 @@ def get_dummy_prediction_from_mlflow() -> None:
 
 
 if __name__ == "__main__":
-    # create_and_deploy_model()
-    # get_dummy_prediction_from_mlflow()
-    get_best_params()
+    create_and_deploy_model()
+    get_dummy_prediction_from_mlflow()
+

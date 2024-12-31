@@ -88,19 +88,41 @@ Each pair of normalized room names is represented with four different features t
 From `rooms/model_creation.py`
 
 LightGBM was used for the binary classification task.
-Evaluation is done by:
-1. Dataset is randomly split between train validation and test sets
-2. Train set is used to train the LightGBM model.
-3. Validation set is used to
-   4. Determine the stopping criteria of training to limit model complexity and avoid overfitting
-   5. Determine the threshold to be used to achieve a given minimum precision. A minimum precision on the validation set was fixed at 80%
-6. Test set is used to calculate the final evaluation. Different metrics are calculated and logged to MLflow but these are the main ones:
-   7. Threshold insensitive:
-      8. The area under the precision recall curve is around 75%
-   8. Threshold sensitive (using the threshold derived from validation set):
-      9. precision 78%
-      10. recall 46%
-   11. 
+Model development is done by first randomly spliting the full dataset into train validation and test sets.
+
+## Hyperparameter tuning
+First, Hyperparamter optimization is done on both the train and validation sets (see `notebooks/hyperparameter_tuning_lgbm.ipynb`). The technique used is a pre-built routine in the `optuna` package specifically made for lightgbm where these hyperparameters are optimized in a stepwise manner: `lambda_l1`, `lambda_l2`, `num_leaves`, `feature_fraction`, `bagging_fraction`, `bagging_freq` and `min_child_samples`.
+
+At the end of this step we know which are the best hyperparameters to use for the final training.
+
+## Training the final model
+Train set is used to train the LightGBM model.
+
+Validation set is used to
+1. Determine the stopping criteria of training to limit model complexity and avoid overfitting
+1. Determine the threshold to be used to achieve a given minimum precision. A minimum precision on the validation set was fixed at 80%
+
+## Evaluation
+
+Test set is used to calculate the final evaluation. Different metrics are calculated and logged to MLflow but these are the main ones:
+1. Threshold insensitive:
+   1. The area under the precision recall curve is around 75%
+8. Threshold sensitive (using the threshold derived from validation set):
+   1. precision 78%
+   1. recall 46%
+
+## Deployment
+
+These artificats are then stored in MLflow:
+- Fitted preprocessing pipeline
+- Fitted LGBM model
+- Evaluation metrics
+
+![mlflow_single_model.png](images/mlflow_single_model.png)
+
+I trained a bunch of different models with default hyperparameters first and then with the tuned hyperparameters, with MLflow we can easily compare their performances. We see that the top one (tuned) is marginally better than the others, meaning that hyperparamter optimization makes the model better but it is not a game changer.
+
+![mlflow_model_comparison.png](images/mlflow_model_comparison.png)
 
 
 
