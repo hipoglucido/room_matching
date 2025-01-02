@@ -5,9 +5,9 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
-from sentence_transformers import SentenceTransformer
+# from sentence_transformers import SentenceTransformer
 from jellyfish import levenshtein_distance, jaro_winkler_similarity
-from rooms.constants_config import ColumnNames, ModelConfig
+from rooms.constants_config import ColumnNames
 from loguru import logger
 from typing import Tuple, List
 
@@ -61,7 +61,7 @@ class RoomMatchingPipeline:
     def __init__(self):
         self.tfidf_vectorizer = TfidfVectorizer()
         self.std_scaler = MinMaxScaler()
-        self.sentence_transformer = SentenceTransformer(ModelConfig.TRANSFORMER_NAME)
+        # self.sentence_transformer = SentenceTransformer(ModelConfig.TRANSFORMER_NAME)
         self.scaler = StandardScaler()
 
     def preprocess_data(self, df: pd.DataFrame, is_training: bool) -> pd.DataFrame:
@@ -84,6 +84,19 @@ class RoomMatchingPipeline:
         df = self.create_features(df, is_training)
 
         return df
+    def add_embedding_cosine_similarity(self, df):
+        embeddings_A = self.sentence_transformer.encode(
+            df["A_norm"].tolist(), convert_to_tensor=True
+        )
+        embeddings_B = self.sentence_transformer.encode(
+            df["B_norm"].tolist(), convert_to_tensor=True
+        )
+
+        embeddings_A = embeddings_A.cpu()  # Move to CPU
+        embeddings_B = embeddings_B.cpu()  # Move to CPU
+        return cosine_similarity(
+            embeddings_A, embeddings_B
+        ).diagonal()
 
     def create_features(self, df: pd.DataFrame, is_training: bool) -> pd.DataFrame:
         """
@@ -116,19 +129,7 @@ class RoomMatchingPipeline:
             lambda row: jaro_winkler_similarity(row["A_norm"], row["B_norm"]), axis=1
         )
 
-        embeddings_A = self.sentence_transformer.encode(
-            df["A_norm"].tolist(), convert_to_tensor=True
-        )
-        embeddings_B = self.sentence_transformer.encode(
-            df["B_norm"].tolist(), convert_to_tensor=True
-        )
-
-        embeddings_A = embeddings_A.cpu()  # Move to CPU
-        embeddings_B = embeddings_B.cpu()  # Move to CPU
-
-        df["embedding_cosine_similarity"] = cosine_similarity(
-            embeddings_A, embeddings_B
-        ).diagonal()
+        # df["embedding_cosine_similarity"] = self.add_embedding_cosine_similarity(df)
 
         assert all(
             [f in df for f in ColumnNames.FEATURES]

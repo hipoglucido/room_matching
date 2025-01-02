@@ -40,7 +40,7 @@ def trained_objects():
                     {
                         "A": "room with a Veranda",
                         "B": "big room with balcony",
-                        "decision": True,
+                        "decision": False,
                     },
                     {"A": "small room", "B": "huge room", "decision": False},
                 ]

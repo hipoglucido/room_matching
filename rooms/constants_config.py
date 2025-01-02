@@ -15,7 +15,7 @@ class ColumnNames:
         "cosine_similarity",
         "levenshtein_distance",
         "jaro_winkler_similarity",
-        "embedding_cosine_similarity",
+        # "embedding_cosine_similarity",
     ]
     TARGET = "match"
     PROBA = "proba"
