@@ -232,16 +232,16 @@ Reach 100% test coverage
 1. In this project Flask is used because it is the easiest, but for real production usecase I recommend to use Fast API which is known to outperform Flask in benchmarks, especially for APIs that handle high throughput.
 1. Load balancing: Distribute incoming traffic across multiple instances of the Flask API. This prevents any single instance from being overwhelmed. We could use load balancers like Nginx, HAProxy, or cloud-based load balancers (AWS Elastic Load Balancing, Google Cloud Load Balancing).
 1. Horizontal scaling: Increase the number of Flask API instances as needed to handle the traffic. This can be done manually or automatically using auto-scaling features provided by cloud platforms.
-1. Caching: Cache frequently accessed data or predictions to reduce the load on your API and improve response times. You can use in-memory caches like Redis or Memcached, or content delivery networks (CDNs) for static assets.
+1. Caching: Cache frequently accessed data or predictions to reduce the load on the API and improve response times.
 
 ## Handling larger datasets
-1. Data partitioning: Divide your dataset into smaller chunks and distribute them across multiple machines or databases (for example using hadoop or S3). This allows to scale the data storage and processing capabilities.
+1. Data partitioning: Divide the dataset into smaller chunks and distribute them across multiple machines or databases (for example using hadoop or S3). This allows to scale the data storage and processing capabilities.
 1. Distributed training: For larger models or datasets, use distributed training techniques to train the model across multiple machines. This reduces training time and allows to handle larger datasets. Although I doubt this training dataset will be that high (TBD)
 1. Monitoring: Set up monitoring tools (like Prometheus or Grafana) to track API performance, resource usage, and error rates. This will help identifying bottlenecks and scale proactively.
-1. Cloud platforms: Consider using cloud platforms (AWS, Google Cloud, Azure) for easier scaling and management of your infrastructure. For example if using AWS, SageMaker could be used as a replacement of MLFlow and Flask.
+1. Cloud platforms: Consider using cloud platforms (AWS, Google Cloud, Azure) for easier scaling and management of the infrastructure. For example if using AWS, SageMaker could be used as a replacement of MLFlow and Flask.
 Containerization: Use Docker to containerize the Flask API and MLflow model for consistent deployment.
 1. Orchestration: For complex deployments, use container orchestration tools like Kubernetes to manage and scale the (docker) containers.
 
-By incorporating these strategies into your API design and deployment, we can ensure that it can handle increased traffic and larger datasets, providing a reliable and scalable solution for your room-matching task.
+By incorporating these strategies into the API design and deployment, we can ensure that it can handle increased traffic and larger datasets, providing a reliable and scalable solution for the room-matching task.
 
 
